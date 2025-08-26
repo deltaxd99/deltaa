@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hallo Raisya</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <style>
+        body {
+            background: #000;
+            margin: 0;
+            overflow: hidden;
+        }
+        .home-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #ee5282;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            animation: fadeIn 2s ease-in-out;
+            transition: opacity 1.2s ease;
+        }
+        .home-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .home-title {
+            color: #fff;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+            font-family: Arial, sans-serif;
+            text-shadow: 0 2px 16px #ee5282;
+            animation: bounce 2s infinite;
+        }
+        .home-btn {
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(90deg, #ee5282, #ffb6b9);
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 16px #ee5282aa;
+            transition: background 0.3s, transform 0.2s;
+            animation: pulse 1.5s infinite;
+        }
+        .home-btn:hover {
+            background: linear-gradient(90deg, #ffb6b9, #ee5282);
+            transform: scale(1.05);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="home-overlay" id="homeOverlay">
+        <div class="home-title">Hallo Raisya</div>
+        <button class="home-btn" id="startBtn">Click Here</button>
+    </div>
+
+    <!-- Audio Player -->
+    <audio id="bgMusic" preload="auto">
+        <source src="lover.mp3" type="audio/mpeg">
+        
+    </audio>
+
+    <!-- Heart Path -->
+    <svg width="600" height="552" style="display:none;">
+        <path id="heartPath" d="M300,80
+            C300,10 500,10 500,80
+            C500,150 300,250 300,400
+            C300,250 100,150 100,80
+            C100,10 300,10 300,80
+            Z" fill="none" stroke="black"/>
+    </svg>
+
+    <script>
+        console.clear();
+
+        /* SETUP */
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            5000
+        );
+        camera.position.z = 500;
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        /* CONTROLS */
+        const controlsWebGL = new THREE.OrbitControls(camera, renderer.domElement);
+
+        /* PARTICLES */
+        const tl = gsap.timeline({ repeat: -1, yoyo: true, paused: true });
+        const path = document.getElementById("heartPath");
+        const length = path.getTotalLength();
+        const vertices = [];
+        for (let i = 0; i < length; i += 0.1) {
+            const point = path.getPointAtLength(i);
+            const vector = new THREE.Vector3(
+                point.x - 300,
+                -(point.y - 276),
+                0
+            );
+            vector.x += (Math.random() - 0.5) * 30;
+            vector.y += (Math.random() - 0.5) * 30;
+            vector.z += (Math.random() - 0.5) * 70;
+            vertices.push(vector);
+            tl.from(vector, {
+                x: 0,
+                y: 0,
+                z: 0,
+                ease: "power2.inOut",
+                duration: gsap.utils.random(2, 5)
+            }, i * 0.002);
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(vertices);
+        const material = new THREE.PointsMaterial({ color: 0xee5282, blending: THREE.AdditiveBlending, size: 3 });
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        gsap.fromTo(scene.rotation, { y: -0.2 }, { y: 0.2, repeat: -1, yoyo: true, ease: 'power2.inOut', duration: 3 });
+
+        /* RENDERING */
+        function render() {
+            requestAnimationFrame(render);
+            geometry.setFromPoints(vertices);
+            renderer.render(scene, camera);
+        }
+        render();
+
+        /* EVENTS */
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onWindowResize, false);
+
+        // Saat klik tombol
+        document.getElementById('startBtn').onclick = function() {
+            const overlay = document.getElementById('homeOverlay');
+            overlay.classList.add('fade-out');
+            setTimeout(() => { overlay.style.display = 'none'; }, 1200);
+
+            // mainkan musik
+            document.getElementById('bgMusic').play();
+
+            // jalankan animasi love
+            tl.play();
+        };
+    </script>
+</body>
+</html>
